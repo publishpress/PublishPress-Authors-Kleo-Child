@@ -48,38 +48,58 @@ function kleo_entry_meta($echo = true, $att = array())
 
     if (is_array($meta_elements) && !empty($meta_elements)) {
         if (in_array('author_link', $meta_elements) || in_array('avatar', $meta_elements)) {
-            $authors = get_multiple_authors();
+            if (function_exists('get_multiple_authors')) {
+                $authors = get_multiple_authors();
 
-            if (!empty($authors)) {
-                foreach ($authors as $author) {
-                    /* If buddypress is active then create a link to Buddypress profile instead */
-                    if (function_exists('bp_is_active')) {
-                        $author_link  = esc_url(
-                            bp_core_get_userlink($author->user_id, $no_anchor = false, $just_link = true)
+                if (!empty($authors)) {
+                    foreach ($authors as $author) {
+                        /* If buddypress is active then create a link to Buddypress profile instead */
+                        if (function_exists('bp_is_active')) {
+                            $author_link  = esc_url(
+                                bp_core_get_userlink($author->user_id, $no_anchor = false, $just_link = true)
+                            );
+                            $author_title = esc_attr(
+                                sprintf(esc_html__('View %s\'s profile', 'kleo'), $author->display_name)
+                            );
+                        } else {
+                            $author_link  = esc_url($author->link);
+                            $author_title = esc_attr(
+                                sprintf(esc_html__('View all POSTS by %s', 'kleo'), $author->display_name)
+                            );
+                        }
+
+                        $author_markup = sprintf(
+                            '<a class="url fn n" href="%1$s" title="%2$s" rel="author">%3$s %4$s</a>',
+                            $author_link,
+                            $author_title,
+                            in_array('avatar', $meta_elements) ? $author->get_avatar(50) : '',
+                            in_array(
+                                'author_link',
+                                $meta_elements
+                            ) ? '<span class="author-name">' . $author->display_name . '</span>' : ''
                         );
-                        $author_title = esc_attr(
-                            sprintf(esc_html__('View %s\'s profile', 'kleo'), $author->display_name)
-                        );
-                    } else {
-                        $author_link  = esc_url($author->link);
-                        $author_title = esc_attr(
-                            sprintf(esc_html__('View all POSTS by %s', 'kleo'), $author->display_name)
-                        );
+
+                        $meta_list[] = '<small class="meta-author author vcard">' . $author_markup . '</small>';
                     }
-
-                    $author_markup = sprintf(
-                        '<a class="url fn n" href="%1$s" title="%2$s" rel="author">%3$s %4$s</a>',
-                        $author_link,
-                        $author_title,
-                        in_array('avatar', $meta_elements) ? $author->get_avatar(50) : '',
-                        in_array(
-                            'author_link',
-                            $meta_elements
-                        ) ? '<span class="author-name">' . $author->display_name . '</span>' : ''
-                    );
-
-                    $meta_list[] = '<small class="meta-author author vcard">' . $author_markup . '</small>';
                 }
+            } else {
+                /* If buddypress is active then create a link to Buddypress profile instead */
+                if ( function_exists( 'bp_is_active' ) ) {
+                    $author_link  = esc_url( bp_core_get_userlink( get_the_author_meta( 'ID' ), $no_anchor = false, $just_link = true ) );
+                    $author_title = esc_attr( sprintf( esc_html__( 'View %s\'s profile', 'kleo' ), get_the_author() ) );
+                } else {
+                    $author_link  = esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) );
+                    $author_title = esc_attr( sprintf( esc_html__( 'View all POSTS by %s', 'kleo' ), get_the_author() ) );
+                }
+
+                $author = sprintf( '<a class="url fn n" href="%1$s" title="%2$s" rel="author">%3$s %4$s</a>',
+                                   $author_link,
+                                   $author_title,
+                                   in_array( 'avatar', $meta_elements ) ? get_avatar( get_the_author_meta( 'ID' ), 50 ) : '',
+                                   in_array( 'author_link', $meta_elements ) ? '<span class="author-name">' . get_the_author() . '</span>' : ''
+                );
+
+                $meta_list[] = '<small class="meta-author author vcard">' . $author . '</small>';
             }
         }
 
